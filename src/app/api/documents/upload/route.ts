@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         if (file.type === "application/pdf") {
             try {
-                const parser = new PDFParser(null, 1); // 1 = text only
+                const parser = new PDFParser(null, true); // true = enable text, disables raw buffer? No, actually 1 means true in some contexts but TS wants boolean
                 content = await new Promise((resolve, reject) => {
                     parser.on("pdfParser_dataError", (errData: any) => reject(errData.parserError));
                     parser.on("pdfParser_dataReady", (pdfData: any) => {
