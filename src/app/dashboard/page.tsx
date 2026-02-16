@@ -2,6 +2,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import YouTubeSummarizer from "@/components/YouTubeSummarizer";
+
+import { db } from "@/db";
+import { documents } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import DocumentsManager from "@/components/DocumentsManager";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -9,6 +17,16 @@ export default async function DashboardPage() {
     if (!session) {
         redirect("/login");
     }
+
+    const userDocs = await db
+        .select({
+            id: documents.id,
+            title: documents.title,
+            createdAt: documents.createdAt,
+        })
+        .from(documents)
+        .where(eq(documents.userId, session.user.id))
+        .orderBy(desc(documents.createdAt));
 
     return (
         <div className="container" style={{ flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', padding: '2rem' }}>
@@ -23,7 +41,7 @@ export default async function DashboardPage() {
                 </div>
             </nav>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
                 <div className="card" style={{ maxWidth: 'none' }}>
                     <h3 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>System Status</h3>
                     <p style={{ color: '#94a3b8' }}>Account Role: <strong style={{ color: 'white' }}>{session.user.role}</strong></p>
@@ -36,6 +54,16 @@ export default async function DashboardPage() {
                         This is a protected area only accessible to approved users. You can now access all premium features of the application.
                     </p>
                 </div>
+            </div>
+
+            <div style={{ marginBottom: '3rem' }}>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>📄 Document Q&A</h3>
+                <DocumentsManager initialDocs={userDocs} />
+            </div>
+
+            <div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>📺 YouTube Summarizer</h3>
+                <YouTubeSummarizer />
             </div>
         </div>
     );
