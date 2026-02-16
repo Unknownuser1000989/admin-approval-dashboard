@@ -6,8 +6,10 @@ import { documents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 
+// Lazy initialization or fallback for build time
+const apiKey = process.env.GROQ_API_KEY || "dummy-key-for-build";
 const openai = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
+    apiKey: apiKey,
     baseURL: "https://api.groq.com/openai/v1",
 });
 

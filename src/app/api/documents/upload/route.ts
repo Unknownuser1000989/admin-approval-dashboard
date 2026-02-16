@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
 
         if (file.type === "application/pdf") {
             try {
-                const parser = new PDFParser(null, true); // true = enable text, disables raw buffer? No, actually 1 means true in some contexts but TS wants boolean
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const parser = new (PDFParser as any)(null, 1); // Cast to any to avoid TS error with library types
                 content = await new Promise((resolve, reject) => {
                     parser.on("pdfParser_dataError", (errData: any) => reject(errData.parserError));
                     parser.on("pdfParser_dataReady", (pdfData: any) => {
