@@ -31,13 +31,48 @@ export default function DocumentsManager({ initialDocs }: { initialDocs: Documen
                     {initialDocs.length === 0 ? (
                         <p style={{ color: "#94a3b8" }}>No documents uploaded yet.</p>
                     ) : (
-                        <ul style={{ listStyle: "none" }}>
+                        <ul style={{ listStyle: "none", padding: 0 }}>
                             {initialDocs.map((doc) => (
-                                <li key={doc.id} style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--border)" }}>
-                                    <div style={{ fontWeight: 500 }}>{doc.title}</div>
-                                    <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
-                                        {new Date(doc.createdAt).toLocaleDateString()}
+                                <li key={doc.id} style={{
+                                    padding: "0.75rem",
+                                    borderBottom: "1px solid var(--border)",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center"
+                                }}>
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>{doc.title}</div>
+                                        <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                                            {new Date(doc.createdAt).toLocaleDateString()}
+                                        </div>
                                     </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("Are you sure you want to delete this document?")) return;
+                                            try {
+                                                const res = await fetch(`/api/documents?id=${doc.id}`, { method: "DELETE" });
+                                                if (res.ok) {
+                                                    router.refresh();
+                                                } else {
+                                                    alert("Failed to delete document");
+                                                }
+                                            } catch (error) {
+                                                console.error("Error deleting document:", error);
+                                                alert("Error deleting document");
+                                            }
+                                        }}
+                                        style={{
+                                            padding: "0.25rem 0.5rem",
+                                            backgroundColor: "#ef4444",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "0.25rem",
+                                            cursor: "pointer",
+                                            fontSize: "0.8rem"
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
                                 </li>
                             ))}
                         </ul>
