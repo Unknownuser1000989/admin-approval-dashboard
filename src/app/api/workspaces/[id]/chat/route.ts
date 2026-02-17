@@ -162,8 +162,18 @@ export async function POST(
                 }
             }
 
-            // Append a disclaimer
-            answer += "\n\n*(Generated in Offline Mode due to AI provider unavailability)*";
+            // Append a disclaimer with diagnostics
+            let errorContext = "";
+            const authError = errors.find((e: any) => e.status === 401 || e.message?.includes("401"));
+            const notFoundError = errors.find((e: any) => e.status === 404 || e.message?.includes("404"));
+
+            if (authError) {
+                errorContext = " (Authentication Failed: Check OPENAI_API_KEY / OPENROUTER_BASE_URL)";
+            } else if (notFoundError) {
+                errorContext = " (Connection Failed: Check OPENROUTER_BASE_URL)";
+            }
+
+            answer += `\n\n*(Generated in Offline Mode due to AI provider unavailability${errorContext})*`;
         }
 
         // improved citation extraction (naive)
