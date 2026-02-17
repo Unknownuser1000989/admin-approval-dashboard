@@ -22,7 +22,7 @@ export async function POST(
         }
 
         const { id: workspaceId } = await params;
-        const { message } = await req.json();
+        const { message, deepSearch } = await req.json();
 
         if (!message) {
             return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -68,16 +68,55 @@ export async function POST(
             context += `\n--- Document: ${doc.title} ---\n${doc.content.substring(0, 5000)}\n`;
         });
 
-        const systemPrompt = `You are an intelligent assistant helping a user with their workspace documents.
-    You have access to the following documents.
+        // Firecrawl Deep Search Integration
+
+        let searchContext = "";
+        if (deepSearch) {
+            console.log("Deep Search enabled. Querying Firecrawl...");
+            try {
+                // Using raw fetch to avoid complex SDK setup if not strictly needed or dependency issues
+                const fcRes = await fetch("https://api.firecrawl.dev/v1/search", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${process.env.FIRECRAWL_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        limit: 3,
+                        scrapeOptions: { formats: ["markdown"] }
+                    })
+                });
+
+                if (fcRes.ok) {
+                    const fcData = await fcRes.json();
+                    if (fcData.data && fcData.data.length > 0) {
+                        searchContext += "\n\n--- Web Search Results (Firecrawl) ---\n";
+                        fcData.data.forEach((item: any) => {
+                            searchContext += `\nSource: [${item.title || item.url}](${item.url})\nContent: ${item.markdown?.substring(0, 1000) || item.description || "No content"}\n`;
+                        });
+                        context += searchContext; // Append to main context
+                    }
+                } else {
+                    console.warn("Firecrawl API failed:", await fcRes.text());
+                }
+            } catch (fcErr) {
+                console.error("Firecrawl error:", fcErr);
+            }
+        }
+
+        const systemPrompt = `You are an intelligent assistant helping a user with their workspace documents and potentially web search results.
     
     Instructions:
-    1. Answer the user's question based ONLY on the provided documents.
-    2. If the answer is not in the documents, say "I couldn't find that information in the provided documents."
-    3. CITATIONS: You MUST cite your sources. When you use information from a document, mention the document title in bold, e.g. **[Document Title]**.
+    1. Answer the user's question based on the provided documents and/or search results.
+    2. If the answer is not in the documents/search results, say "I couldn't find that information."
+    3. CITATIONS: You MUST cite your sources. 
+       - For documents, use **[Document Title]**.
+       - For web results, use **[Source Title]**.
     4. Provide a clear, concise, and accurate answer.
+    5. If conflicting info exists, prioritize documents unless the query specifically asks for latest web info.
     
-    Documents Context:
+    Context:
     ${context}
     `;
 

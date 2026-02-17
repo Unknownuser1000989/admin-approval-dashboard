@@ -13,6 +13,7 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isDeepSearch, setIsDeepSearch] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -33,7 +34,7 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
             const res = await fetch(`/api/workspaces/${workspaceId}/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userMsg.content }),
+                body: JSON.stringify({ message: userMsg.content, deepSearch: isDeepSearch }),
             });
 
             if (!res.ok) {
@@ -116,24 +117,56 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
             </div>
 
             {/* Input Area */}
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.75rem', background: 'rgba(15, 23, 42, 0.5)' }}>
-                <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !loading && sendMessage()}
-                    placeholder="Ask a question..."
-                    className="input"
-                    style={{ flex: 1, boxShadow: 'none' }}
-                    disabled={loading}
-                />
-                <button
-                    onClick={sendMessage}
-                    className="button"
-                    disabled={loading || !input.trim()}
-                    style={{ width: 'auto', padding: '0 1.5rem' }}
-                >
-                    Send
-                </button>
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.75rem', background: 'rgba(15, 23, 42, 0.5)', flexDirection: 'column' }}>
+                {/* Deep Search Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', alignSelf: 'flex-start' }}>
+                    <button
+                        onClick={() => setIsDeepSearch(!isDeepSearch)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            color: isDeepSearch ? '#38bdf8' : '#64748b',
+                            fontSize: '0.85rem',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s',
+                            backgroundColor: isDeepSearch ? 'rgba(56, 189, 248, 0.1)' : 'transparent'
+                        }}
+                        title={isDeepSearch ? "Deep Search Enabled (Web + Docs)" : "Deep Search Disabled (Docs Only)"}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <span>Deep Search {isDeepSearch ? "ON" : "OFF"}</span>
+                    </button>
+                    {isDeepSearch && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>(Simultaneous Web & Document Search)</span>}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                        placeholder={isDeepSearch ? "Ask anything (Web + Docs)..." : "Ask about your documents..."}
+                        className="input"
+                        style={{ flex: 1, boxShadow: 'none' }}
+                        disabled={loading}
+                    />
+                    <button
+                        onClick={sendMessage}
+                        className="button"
+                        disabled={loading || !input.trim()}
+                        style={{ width: 'auto', padding: '0 1.5rem' }}
+                    >
+                        Send
+                    </button>
+                </div>
             </div>
         </div>
     );
