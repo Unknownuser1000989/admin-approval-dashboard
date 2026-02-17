@@ -82,6 +82,9 @@ export async function POST(
     `;
 
         const models = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "mixtral-8x7b-32768",
             "google/gemini-2.0-flash-lite-preview-02-05:free",
             "meta-llama/llama-3.3-70b-instruct:free",
             "google/gemini-2.0-pro-exp-02-05:free",
