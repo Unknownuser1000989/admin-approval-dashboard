@@ -64,7 +64,8 @@ export async function POST(
         // Let's limit per document or total just in case.
         let context = "";
         docs.forEach(doc => {
-            context += `\n--- Document: ${doc.title} ---\n${doc.content.substring(0, 30000)}\n`;
+            // Reduced to 5000 chars (~1500 tokens) to fit in smaller context windows (8k)
+            context += `\n--- Document: ${doc.title} ---\n${doc.content.substring(0, 5000)}\n`;
         });
 
         const systemPrompt = `You are an intelligent assistant helping a user with their workspace documents.
@@ -105,8 +106,11 @@ export async function POST(
                     answer = completion.choices[0].message.content || "";
                     break; // Success
                 }
-            } catch (err) {
-                console.warn(`Model ${model} failed:`, err);
+            } catch (err: any) {
+                console.warn(`Model ${model} failed:`, err.message);
+                if (err.response) {
+                    console.warn(`Error details:`, JSON.stringify(err.response.data || {}, null, 2));
+                }
                 lastError = err;
                 // Continue to next model
             }
