@@ -6,15 +6,15 @@ import { workspaces, documents } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: process.env.OPENROUTER_BASE_URL,
-});
-
 export async function POST(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        baseURL: process.env.OPENROUTER_BASE_URL,
+    });
+
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
