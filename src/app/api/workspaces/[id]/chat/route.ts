@@ -80,14 +80,43 @@ export async function POST(
     ${context}
     `;
 
-        const completion = await openai.chat.completions.create({
-            messages: [
-                { role: "user", content: `${systemPrompt}\n\nUser Question: ${message}` },
-            ],
-            model: "google/gemini-2.0-pro-exp-02-05:free",
-        });
+        const models = [
+            "meta-llama/llama-3-8b-instruct:free",
+            "google/gemini-2.0-flash-lite-preview-02-05:free",
+            "mistralai/mistral-7b-instruct:free",
+            "microsoft/phi-3-mini-128k-instruct:free"
+        ];
 
-        const answer = completion.choices[0].message.content;
+        let answer = "";
+        let completion = null;
+        let lastError = null;
+
+        for (const model of models) {
+            try {
+                console.log(`Attempting chat with model: ${model}`);
+                completion = await openai.chat.completions.create({
+                    messages: [
+                        { role: "user", content: `${systemPrompt}\n\nUser Question: ${message}` },
+                    ],
+                    model: model,
+                });
+
+                if (completion && completion.choices && completion.choices.length > 0) {
+                    answer = completion.choices[0].message.content || "";
+                    break; // Success
+                }
+            } catch (err) {
+                console.warn(`Model ${model} failed:`, err);
+                lastError = err;
+                // Continue to next model
+            }
+        }
+
+        if (!answer && lastError) {
+            throw lastError;
+        } else if (!answer) {
+            throw new Error("All models failed to return a response.");
+        }
 
         // improved citation extraction (naive)
         const citationRegex = /\*\*\[(.*?)\]\*\*/g;
