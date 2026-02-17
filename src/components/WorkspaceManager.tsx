@@ -55,7 +55,7 @@ export default function WorkspaceManager({ initialWorkspaces }: WorkspaceManager
                     onChange={(e) => setNewWorkspaceName(e.target.value)}
                     placeholder="New Workspace Name"
                     className="input"
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'white' }}
+                    style={{ flex: 1, padding: '1rem', fontSize: '1.1rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'white' }}
                     onKeyDown={(e) => e.key === 'Enter' && createWorkspace()}
                 />
                 <button

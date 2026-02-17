@@ -14,13 +14,26 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [isDeepSearch, setIsDeepSearch] = useState(false);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setShowScrollButton(false);
     };
 
-    useEffect(scrollToBottom, [messages]);
+    const handleScroll = () => {
+        if (scrollContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            setShowScrollButton(!isNearBottom);
+        }
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const sendMessage = async () => {
         if (!input.trim()) return;
@@ -63,9 +76,13 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--card-bg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--card-bg)', position: 'relative' }}>
             {/* Messages Area */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+            >
                 {messages.length === 0 && (
                     <div style={{ textAlign: 'center', color: '#64748b', marginTop: 'auto', marginBottom: 'auto' }}>
                         <p>Ask a question based on your uploaded documents.</p>
@@ -115,6 +132,37 @@ export default function WorkspaceChat({ workspaceId }: { workspaceId: string }) 
                 )}
                 <div ref={messagesEndRef} />
             </div>
+
+            {/* Scroll Button */}
+            {showScrollButton && (
+                <button
+                    onClick={scrollToBottom}
+                    style={{
+                        position: 'absolute',
+                        bottom: '80px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'var(--accent)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                        zIndex: 10,
+                        transition: 'opacity 0.2s'
+                    }}
+                    title="Scroll to bottom"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            )}
 
             {/* Input Area */}
             <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.75rem', background: 'rgba(15, 23, 42, 0.5)', flexDirection: 'column' }}>
