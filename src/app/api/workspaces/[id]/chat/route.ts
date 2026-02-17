@@ -119,8 +119,44 @@ export async function POST(
         }
 
         if (!answer) {
-            console.error("All models failed:", JSON.stringify(errors, null, 2));
-            throw new Error(`All models failed. Details: ${JSON.stringify(errors)}`);
+            console.warn("All models failed. Switching to Offline Fallback Mode.");
+
+            // Offline/Fallback Logic
+            const lowerCaseMessage = message.toLowerCase();
+
+            // 1. Simple Summarization Logic
+            if (lowerCaseMessage.includes("summarize") || lowerCaseMessage.includes("summary") || lowerCaseMessage.includes("tell me about")) {
+                answer = "I am unable to reach the AI models right now, but here is a summary based on the documents:\n\n";
+                docs.forEach(doc => {
+                    answer += `**${doc.title}**:\n${doc.content.substring(0, 500)}...\n\n`;
+                });
+            }
+            // 2. Keyword Search Logic
+            else {
+                const keywords = lowerCaseMessage.split(" ").filter((w: string) => w.length > 3); // Filter short words
+                let matches: string[] = [];
+
+                docs.forEach(doc => {
+                    const sentences = doc.content.split(/[.!?\n]/);
+                    sentences.forEach(sentence => {
+                        const lowerSentence = sentence.toLowerCase();
+                        // Check if at least one keyword matches
+                        if (keywords.some((k: string) => lowerSentence.includes(k))) {
+                            matches.push(`...${sentence.trim()}... (from ${doc.title})`);
+                        }
+                    });
+                });
+
+                if (matches.length > 0) {
+                    // Limit to top 5 matches to avoid spam
+                    answer = "I am running in offline mode. Here are some relevant excerpts I found:\n\n" + matches.slice(0, 5).join("\n\n");
+                } else {
+                    answer = "I am running in offline mode and couldn't find specific matches for your query. Please try asking for a 'summary'.";
+                }
+            }
+
+            // Append a disclaimer
+            answer += "\n\n*(Generated in Offline Mode due to AI provider unavailability)*";
         }
 
         // improved citation extraction (naive)
