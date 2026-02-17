@@ -18,6 +18,7 @@ export async function POST(req: Request) {
     const { url, text } = await req.json();
 
     let transcriptText = text;
+    let videoTitle: string | undefined;
 
     // If no text provided but URL is, try to fetch transcript
     if (!transcriptText && url) {
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
           });
 
           const info = await youtube.getInfo(videoId);
+          videoTitle = info.basic_info.title;
+          console.log(`Video Title captured: ${videoTitle}`);
+
           // Get audio stream - prefer lowest quality to save bandwidth/processing for whisper
           const format = info.chooseFormat({ type: 'audio', quality: 'best' });
 
@@ -114,7 +118,11 @@ export async function POST(req: Request) {
               const { tavily } = require('@tavily/core');
               const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
-              const searchResult = await tvly.search(url, {
+              // Use video title for better search results if available
+              const searchQuery = videoTitle ? `${videoTitle} video summary review` : url;
+              console.log(`Searching Tavily with query: ${searchQuery}`);
+
+              const searchResult = await tvly.search(searchQuery, {
                 search_depth: "advanced",
                 include_answer: true,
                 max_results: 5
@@ -122,8 +130,11 @@ export async function POST(req: Request) {
 
               console.log('Tavily search complete.');
 
-              let contextText = `Video URL: ${url}\n\n`;
-              if (searchResult.answer) contextText += `AI Answer: ${searchResult.answer}\n\n`;
+              let contextText = `Video URL: ${url}\n`;
+              if (videoTitle) contextText += `Video Title: ${videoTitle}\n`;
+              contextText += `\n`;
+
+              if (searchResult.answer) contextText += `AI Search Answer: ${searchResult.answer}\n\n`;
 
               if (searchResult.results && searchResult.results.length > 0) {
                 contextText += "Search Results:\n";
@@ -131,13 +142,13 @@ export async function POST(req: Request) {
                   contextText += `- Title: ${res.title}\n  Content: ${res.content}\n  URL: ${res.url}\n\n`;
                 });
 
-                const systemPrompt = `You are an expert researcher. The user wants a summary of a YouTube video, but the video itself is inaccessible.
-                      However, we have performed a web search for the video link.
+                const systemPrompt = `You are an expert researcher. The user wants a summary of a YouTube video, but the video itself is inaccessible (no captions, audio blocked).
+                      However, we have performed a web search for the video to find summaries, reviews, or discussions.
                       
-                      Based *only* on the search results below, provide a comprehensive summary of what this video is likely about.
-                      Structure it as Study Notes if possible, or a detailed breakdown of the topic if specific video details are missing.
+                      Based *only* on the search results provided, create comprehensive Study Notes for the user.
                       
-                      If the search results are generic or irrelevant, honestly state that you couldn't find specific details about this video, but summarize the general topic if clear.`;
+                      If the search results are generic or irrelevant and you cannot confidently summarize the specific video's content, 
+                      honestly state that you couldn't find specific details about this video, but likely it covers [General Topic based on title] based on the title.`;
 
                 const completion = await openai.chat.completions.create({
                   messages: [

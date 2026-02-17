@@ -54,6 +54,13 @@ export default async function DashboardPage() {
                         This is a protected area only accessible to approved users. You can now access all premium features of the application.
                     </p>
                 </div>
+
+                <Link href="/workspaces" className="card" style={{ maxWidth: 'none', textDecoration: 'none', cursor: 'pointer', borderColor: 'var(--accent)' }}>
+                    <h3 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>🚀 Workspaces</h3>
+                    <p style={{ color: '#94a3b8' }}>
+                        Create and manage collections of documents. Chat with multiple files at once using AI.
+                    </p>
+                </Link>
             </div>
 
             <div style={{ marginBottom: '3rem' }}>
