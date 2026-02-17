@@ -82,10 +82,11 @@ export async function POST(
     `;
 
         const models = [
-            "meta-llama/llama-3-8b-instruct:free",
-            "google/gemini-2.0-flash-lite-preview-02-05:free",
-            "mistralai/mistral-7b-instruct:free",
-            "microsoft/phi-3-mini-128k-instruct:free"
+            "google/gemini-2.0-flash-exp:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "deepseek/deepseek-r1:free",
+            "meta-llama/llama-3.2-3b-instruct:free",
+            "mistralai/mistral-7b-instruct:free"
         ];
 
         let answer = "";
