@@ -52,6 +52,27 @@ export default function WorkspaceDocuments({ initialDocs, workspaceId }: Workspa
         }
     };
 
+    const handleDelete = async (docId: string) => {
+        if (!confirm("Are you sure you want to delete this document?")) return;
+
+        try {
+            const res = await fetch(`/api/workspaces/${workspaceId}/documents/${docId}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Delete failed");
+            }
+
+            setDocs(docs.filter((d) => d.id !== docId));
+            router.refresh();
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message || "Delete failed");
+        }
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -81,16 +102,43 @@ export default function WorkspaceDocuments({ initialDocs, workspaceId }: Workspa
                             padding: '0.75rem',
                             borderBottom: '1px solid var(--border)',
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.25rem',
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '0.5rem',
                             transition: 'background 0.2s',
                         }}
-                            className="hover:bg-slate-800/50" // Assuming tailwind utility might work or just rely on CSS
+                            className="hover:bg-slate-800/50"
                         >
-                            <span style={{ fontWeight: '500', color: '#f1f5f9', wordBreak: 'break-word' }}>{doc.title}</span>
-                            <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                                {new Date(doc.createdAt).toLocaleDateString()}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', overflow: 'hidden' }}>
+                                <span style={{ fontWeight: '500', color: '#f1f5f9', wordBreak: 'break-word' }}>{doc.title}</span>
+                                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                    {new Date(doc.createdAt).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => handleDelete(doc.id)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#ef4444',
+                                    padding: '0.25rem',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'background 0.2s'
+                                }}
+                                title="Delete Document"
+                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
                         </li>
                     ))}
                     {docs.length === 0 && (
