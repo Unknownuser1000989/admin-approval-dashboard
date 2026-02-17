@@ -89,17 +89,21 @@ export async function POST(
         ];
 
         let answer = "";
-        let completion = null;
-        let lastError = null;
+        const errors: any[] = [];
 
         for (const model of models) {
             try {
                 console.log(`Attempting chat with model: ${model}`);
-                completion = await openai.chat.completions.create({
+                const completion = await openai.chat.completions.create({
                     messages: [
                         { role: "user", content: `${systemPrompt}\n\nUser Question: ${message}` },
                     ],
                     model: model,
+                }, {
+                    headers: {
+                        "HTTP-Referer": process.env.NEXTAUTH_URL || "http://localhost:3000",
+                        "X-Title": "Admin Approval Dashboard",
+                    }
                 });
 
                 if (completion && completion.choices && completion.choices.length > 0) {
@@ -108,18 +112,14 @@ export async function POST(
                 }
             } catch (err: any) {
                 console.warn(`Model ${model} failed:`, err.message);
-                if (err.response) {
-                    console.warn(`Error details:`, JSON.stringify(err.response.data || {}, null, 2));
-                }
-                lastError = err;
+                errors.push({ model, message: err.message, status: err.response?.status, data: err.response?.data });
                 // Continue to next model
             }
         }
 
-        if (!answer && lastError) {
-            throw lastError;
-        } else if (!answer) {
-            throw new Error("All models failed to return a response.");
+        if (!answer) {
+            console.error("All models failed:", JSON.stringify(errors, null, 2));
+            throw new Error(`All models failed. Details: ${JSON.stringify(errors)}`);
         }
 
         // improved citation extraction (naive)
